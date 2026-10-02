@@ -3,12 +3,13 @@ export interface ResearchPaper {
   title: string;
   authors: string[];
   year: number;
-  source: 'arxiv' | 'ieee' | 'springer' | 'pubmed' | 'crossref';
+  source: 'arxiv' | 'ieee' | 'springer';
   journal?: string;
   doi?: string;
   url: string;
   pdfUrl?: string;
   abstract?: string;
+  fullText?: string;
   summary?: string;
   citationCount?: number;
   isOpenAccess: boolean;
@@ -31,4 +32,3 @@ export interface SearchQuery {
   filters?: SearchFilters;
   sources?: string[];
 }
-

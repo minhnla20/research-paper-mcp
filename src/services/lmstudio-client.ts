@@ -63,17 +63,20 @@ export class LMStudioService {
   }
 
   private buildSummaryPrompt(paper: ResearchPaper, type: string): string {
-    const baseInfo = `Title: ${paper.title}\nAuthors: ${paper.authors.join(', ')}\nAbstract: ${paper.abstract ?? ''}`;
+    const content = paper.fullText 
+      ? `Full Paper Text:\n${paper.fullText.slice(0, 12000)}\n\n[Abstract]:\n${paper.abstract ?? ''}`
+      : `Abstract:\n${paper.abstract ?? 'No abstract provided'}`;
+    const baseInfo = `Title: ${paper.title}\nAuthors: ${paper.authors.join(', ')}\n\n${content}`;
     switch (type) {
       case 'detailed':
-        return `${baseInfo}\n\nProvide a detailed summary covering the problem, methodology, key findings, and implications:`;
+        return `${baseInfo}\n\nProvide a comprehensive, detailed summary covering the problem, methodology, key findings, and technical implications:`;
       case 'methodology':
-        return `${baseInfo}\n\nFocus on summarizing the research methodology and experimental approach:`;
+        return `${baseInfo}\n\nFocus specifically on summarizing the research methodology, system design, and experimental approach:`;
       case 'findings':
-        return `${baseInfo}\n\nSummarize the key findings, results, and conclusions:`;
+        return `${baseInfo}\n\nSummarize the key findings, benchmark results, and conclusions:`;
       case 'brief':
       default:
-        return `${baseInfo}\n\nProvide a 2-3 sentence summary of this research paper's main contribution:`;
+        return `${baseInfo}\n\nProvide a concise 2-3 sentence summary of this research paper's main contribution:`;
     }
   }
 }

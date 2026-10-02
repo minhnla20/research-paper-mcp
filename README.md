@@ -17,8 +17,8 @@
 
 ## ⚡ Features
 
-- 🎯 **Multi-Source Discovery** - Search across arXiv, IEEE Xplore, Springer, PubMed, CrossRef
-- 🤖 **AI-Powered Summaries** - Intelligent summaries using Groq LLM (fast & cost-effective)
+- 🎯 **Multi-Source Discovery** - Search across arXiv, IEEE Xplore, and Springer Nature
+- 🤖 **AI-Powered Summaries** - Intelligent summaries using LMStudio SDK (`google/gemma-4-e4b`) from either abstracts or full downloaded PDFs
 - 📊 **Advanced Filtering** - Filter by year, journal, open-access, citation count
 - 📝 **Citation Export** - Support for BibTeX, APA, IEEE, MLA formats
 - 📄 **PDF Retrieval** - Direct download when available
@@ -124,8 +124,7 @@ pnpm exec cf secrets-store create SPRINGER_API_KEY
 
 ```
 src/
-├── index.ts                 # Main MCP server entry point
-├── worker.ts                # Cloudflare Workers entry point
+├── index.ts                 # Unified MCP server entry point (Cloudflare Worker & Node.js HTTP)
 ├── tools/                   # MCP tool implementations
 │   ├── search-papers.ts     # Paper search tool
 │   ├── generate-summary.ts  # AI summary generation
@@ -190,19 +189,17 @@ You can connect directly to your deployed Cloudflare Worker via the MCP Streamab
 
 | Source | API Required | Description | Coverage |
 |--------|--------------|-------------|-----------|
-| **arXiv** | ❌ Free | Preprint repository | Physics, Math, CS |
-| **IEEE Xplore** | ⭐ Enhanced | IEEE publications | Engineering, Technology |
-| **Springer** | ⭐ Enhanced | Springer publications | All disciplines |
-| **PubMed** | ❌ Free | Medical research | Medicine, Life Sciences |
-| **CrossRef** | ❌ Free | DOI resolution | All disciplines |
+| **arXiv** | ❌ Free | Preprint repository with full abstracts & PDFs | Physics, Math, CS, Quantitative Biology |
+| **IEEE Xplore** | ⭐ Enhanced | IEEE publications & journals | Engineering, Computer Science, Technology |
+| **Springer** | ⭐ Enhanced | Springer Nature publications & books | Multidisciplinary research |
 
 ## 🤖 AI-Powered Features
 
 ### Summary Generation
-- **Groq LLM Integration** - Fast, cost-effective AI summaries
+- **LMStudio SDK Integration** - High-speed, local or self-hosted LLM summaries (`google/gemma-4-e4b`)
+- **Full-Text or Abstract Summarization** - Summarize from paper abstracts or extract full PDF text
 - **Multiple Types** - Brief, detailed, methodology, findings
-- **Fallback Support** - Abstract-based summaries if AI unavailable
-- **Smart Caching** - Reduced API calls and faster responses
+- **Smart Caching** - Discovered papers are automatically cached; on-demand arXiv fetching by ID
 
 ## 📖 Usage Examples
 

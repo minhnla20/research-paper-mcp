@@ -1,6 +1,7 @@
 import { ResearchPaper, SearchFilters } from "../types/paper.js";
+import { cachePaper } from "./generate-summary.js";
 
-// Placeholder service interfaces for Phase 1
+// Service interface for Paper Search
 interface PaperSearchService {
   search(query: string, maxResults: number): Promise<ResearchPaper[]>;
 }
@@ -35,25 +36,24 @@ function sortResults(papers: ResearchPaper[], sortBy: SearchFilters["sortBy"]): 
       return copy.sort((a, b) => (b.citationCount || 0) - (a.citationCount || 0));
     case "relevance":
     default:
-      return copy; // keep incoming order as relevance proxy
+      return copy;
   }
 }
 
 export async function searchPapers(args: {
   query: string;
   filters?: SearchFilters;
-  services?: PaperSearchService[]; // for DI/testing
+  services?: PaperSearchService[];
 }): Promise<{ papers: ResearchPaper[] }> {
   const { query, filters = {}, services = [] } = args;
   const results: ResearchPaper[] = [];
 
   if (services.length === 0) {
-    // Default services: arXiv + IEEE + Springer
+    // Default services: arXiv (free full abstracts) + IEEE + Springer
     let ArxivCtor: new () => PaperSearchService;
     let IEEECtor: new (apiKey: string) => PaperSearchService;
     let SpringerCtor: new (apiKey: string) => PaperSearchService;
-    let PubMedCtor: new () => PaperSearchService;
-    let CrossRefCtor: new () => PaperSearchService;
+
     try {
       const mod = await import("../services/arxiv.js");
       ArxivCtor = mod.ArxivService as unknown as new () => PaperSearchService;
@@ -62,36 +62,26 @@ export async function searchPapers(args: {
         async search(): Promise<ResearchPaper[]> { return []; }
       } as unknown as new () => PaperSearchService;
     }
+
     try {
       const mod = await import("../services/ieee.js");
       IEEECtor = mod.IEEEService as unknown as new (apiKey: string) => PaperSearchService;
     } catch {
       IEEECtor = class { constructor(_: string) {} async search(): Promise<ResearchPaper[]> { return []; } } as unknown as new (apiKey: string) => PaperSearchService;
     }
+
     try {
       const mod = await import("../services/springer.js");
       SpringerCtor = mod.SpringerService as unknown as new (apiKey: string) => PaperSearchService;
     } catch {
       SpringerCtor = class { constructor(_: string) {} async search(): Promise<ResearchPaper[]> { return []; } } as unknown as new (apiKey: string) => PaperSearchService;
     }
-    try {
-      const mod = await import("../services/pubmed.js");
-      PubMedCtor = mod.PubMedService as unknown as new () => PaperSearchService;
-    } catch {
-      PubMedCtor = class { async search(): Promise<ResearchPaper[]> { return []; } } as unknown as new () => PaperSearchService;
-    }
-    try {
-      const mod = await import("../services/crossref.js");
-      CrossRefCtor = mod.CrossRefService as unknown as new () => PaperSearchService;
-    } catch {
-      CrossRefCtor = class { async search(): Promise<ResearchPaper[]> { return []; } } as unknown as new () => PaperSearchService;
-    }
+
     const arxiv = new ArxivCtor();
     const ieee = new IEEECtor(process.env.IEEE_API_KEY || "");
     const springer = new SpringerCtor(process.env.SPRINGER_API_KEY || "");
-    const pubmed = new PubMedCtor();
-    const crossref = new CrossRefCtor();
-    services.push(arxiv, ieee, springer, pubmed, crossref);
+
+    services.push(arxiv, ieee, springer);
   }
 
   const maxResults = filters.maxResults || 20;
@@ -106,6 +96,10 @@ export async function searchPapers(args: {
   const deduped = removeDuplicates(filtered);
   const sorted = sortResults(deduped, filters.sortBy);
 
+  // Automatically populate cache for every discovered paper so generate_summary can use it
+  for (const paper of sorted) {
+    cachePaper(paper);
+  }
+
   return { papers: sorted };
 }
-
